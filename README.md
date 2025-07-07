@@ -50,18 +50,32 @@ pip install -r requirements.txt
 ```
 
 ### Environment Setup
-Create a `.env` file in the project root:
-```env
-OPENROUTER_API_KEY=your_api_key_here
-OPENAI_API_BASE=https://openrouter.ai/api/v1
-```
+1. **Copy the example environment file:**
+   ```bash
+   cp env.example .env
+   ```
 
-**Get your OpenRouter API key:**
-1. Visit [OpenRouter.ai](https://openrouter.ai/)
-2. Sign up for an account
-3. Navigate to API Keys section
-4. Generate a new API key
-5. Add it to your `.env` file
+2. **Edit `.env` and configure your settings:**
+   ```env
+   # Required: OpenRouter API key for LLM access
+   OPENROUTER_API_KEY=your_api_key_here
+   
+   # Optional: Path to BIRD database directory
+   BIRD_DB_PATH=../bird/train/train_databases/train_databases
+   
+   # Optional: OpenAI API base URL (defaults to OpenRouter)
+   OPENAI_API_BASE=https://openrouter.ai/api/v1
+   
+   # Optional: Default model to use
+   DEFAULT_MODEL=qwen/qwen-2.5-72b-instruct
+   ```
+
+3. **Get your OpenRouter API key:**
+   - Visit [OpenRouter.ai](https://openrouter.ai/)
+   - Sign up for an account
+   - Navigate to API Keys section
+   - Generate a new API key
+   - Add it to your `.env` file
 
 ### Generate Ground Truth Data
 ```bash
@@ -131,13 +145,40 @@ python visualize_graphs.py                 # Generate visualizations
 
 ## Configuration
 
+The system uses a centralized configuration system to avoid hardcoded paths and make it easy to deploy across different environments.
+
+### Configuration Files
+- **`config.py`**: Central configuration file with all paths and settings
+- **`env.example`**: Example environment file with all configurable variables
+- **`.env`**: Your local environment configuration (not tracked in git)
+
+### Key Configuration Options
+
+#### Required Settings
+- **`OPENROUTER_API_KEY`**: Your OpenRouter API key for LLM access
+
+#### Optional Settings
+- **`BIRD_DB_PATH`**: Path to BIRD database directory (default: `../bird/train/train_databases/train_databases`)
+- **`DEFAULT_MODEL`**: Default LLM model to use (default: `qwen/qwen-2.5-72b-instruct`)
+- **`REQUESTS_PER_MINUTE`**: Rate limiting for API calls (default: 60)
+
+#### Directory Structure
+All data directories are automatically created:
+- `data/sql_queries/`: Ground truth SQL queries
+- `data/final_data/`: Queries with natural language
+- `data/generated_query/`: Generated SQL queries
+- `data/connection_graphs/`: Database connection graphs
+- `logs/`: Application logs
+- `results/`: Evaluation results
+- `visualization/`: Generated visualizations
+
 ### Model Configuration
 - Default model: `qwen/qwen-2.5-72b-instruct`
-- Configurable via model variables in scripts
+- Configurable via environment variables
 - Support for multiple open source LLMs via OpenRouter API
 
 ### Generation Parameters
-- Hop lengths: 2-20 (configurable)
+- Hop lengths: 2-20 (configurable in scripts)
 - Batch sizes: 100 queries per batch
 - Temperature: 0.1 for consistent results
 

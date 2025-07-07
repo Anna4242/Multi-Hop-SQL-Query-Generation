@@ -13,28 +13,33 @@ from datetime import datetime
 from dotenv import load_dotenv
 from typing import Dict, List, Any
 import glob
+import sys
 
-# Load environment variables
-load_dotenv()
+# Add parent directory to path to import config
+sys.path.append(str(Path(__file__).parent.parent))
+from config import (
+    OPENROUTER_API_KEY, DEFAULT_MODEL, BIRD_DB_PATH,
+    FINAL_DATA_DIR, GENERATED_QUERY_SIMPLE_DIR,
+    get_database_description_path, get_hop_data_dir,
+    validate_config
+)
+
+# Validate configuration
+validate_config()
 
 # Configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = "qwen/qwen-2.5-72b-instruct"
+MODEL = DEFAULT_MODEL
 HOP_LENGTHS = [20]
-OUTPUT_DIR = "generated_query_simple"
 
 class SimpleSQLGenerator:
-    def __init__(self, bird_db_path: str, source_dir: str = "final_data"):
-        self.bird_db_path = Path(bird_db_path)
-        self.source_dir = Path(source_dir)
-        self.output_dir = Path(OUTPUT_DIR)
-        
-        # Create output directory
-        self.output_dir.mkdir(exist_ok=True)
+    def __init__(self, bird_db_path: str = None, source_dir: str = None):
+        self.bird_db_path = Path(bird_db_path) if bird_db_path else Path(BIRD_DB_PATH)
+        self.source_dir = Path(source_dir) if source_dir else FINAL_DATA_DIR
+        self.output_dir = GENERATED_QUERY_SIMPLE_DIR
         
     def get_database_schema(self, db_name: str, target_tables: List[str]) -> str:
         """Get simplified schema for target tables only."""
-        db_path = self.bird_db_path / db_name / "database_description" / "database_description.txt"
+        db_path = get_database_description_path(db_name)
         
         if not db_path.exists():
             return f"Schema for {db_name} not found"
@@ -172,8 +177,8 @@ Generate ONLY the SQL query without any explanations or markdown formatting."""
                 print(f"   [{i+1:3d}/{len(batch_data)}] Success: {success_rate:5.1f}%", end='\r')
         
         # Save results in same format as source
-        output_hop_dir = self.output_dir / f"{hop_length}_hop"
-        output_hop_dir.mkdir(exist_ok=True)
+        output_hop_dir = get_hop_data_dir(hop_length, "generated_query_simple")
+        output_hop_dir.mkdir(parents=True, exist_ok=True)
         
         output_file = output_hop_dir / batch_path.name
         
@@ -185,7 +190,7 @@ Generate ONLY the SQL query without any explanations or markdown formatting."""
     
     def process_hop_length(self, hop_length: int):
         """Process all batches for a specific hop length."""
-        hop_dir = self.source_dir / f"{hop_length}_hop"
+        hop_dir = get_hop_data_dir(hop_length, "final_data")
         
         if not hop_dir.exists():
             print(f"ERROR: Directory not found: {hop_dir}")
@@ -197,7 +202,7 @@ Generate ONLY the SQL query without any explanations or markdown formatting."""
         
         print(f"\nProcessing {hop_length}-hop: {len(batch_files)} batches found")
         print(f"Source: {hop_dir}")
-        print(f"Output: {self.output_dir / f'{hop_length}_hop'}")
+        print(f"Output: {get_hop_data_dir(hop_length, 'generated_query_simple')}")
         
         for batch_file in batch_files:
             self.process_batch_file(batch_file, hop_length)
@@ -230,12 +235,10 @@ Generate ONLY the SQL query without any explanations or markdown formatting."""
 
 def main():
     """Main function."""
-    bird_db_path = "../bird/train/train_databases/train_databases"
-    
     # Check if source directories exist
     print("Checking source directories...")
     for hop in HOP_LENGTHS:
-        source_dir = Path(f"final_data/{hop}_hop")
+        source_dir = get_hop_data_dir(hop, "final_data")
         if source_dir.exists():
             batch_count = len(list(source_dir.glob("batch_*.json")))
             print(f"   OK {hop}-hop: {batch_count} batches in {source_dir}")
@@ -245,7 +248,7 @@ def main():
     print()
     
     # Run generation
-    generator = SimpleSQLGenerator(bird_db_path)
+    generator = SimpleSQLGenerator()
     generator.run_generation()
 
 if __name__ == "__main__":

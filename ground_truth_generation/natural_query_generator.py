@@ -20,21 +20,21 @@ import re
 from datetime import datetime
 
 # ----------------------------------------------------------------------------- 
-# Load environment variables from .env
+# Load configuration
 # ----------------------------------------------------------------------------- 
-DOTENV_PATH = pathlib.Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(DOTENV_PATH)
+# Add parent directory to path to import config
+sys.path.append(str(Path(__file__).parent.parent))
+from config import (
+    OPENROUTER_API_KEY, OPENAI_API_BASE, DEFAULT_MODEL,
+    SQL_QUERIES_DIR, FINAL_DATA_DIR, REQUESTS_PER_MINUTE,
+    MIN_TIME_BETWEEN_REQUESTS, validate_config
+)
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENAI_API_BASE = os.getenv("OPENAI_API_BASE")
+# Validate configuration
+validate_config()
 
-if not OPENROUTER_API_KEY:
-    raise RuntimeError("Missing environment variable: OPENROUTER_API_KEY")
-if not OPENAI_API_BASE:
-    raise RuntimeError("Missing environment variable: OPENAI_API_BASE")
-
-# Model to use for generation - Using Qwen 72B as requested
-MODEL = "qwen/qwen-2.5-72b-instruct"
+# Model to use for generation
+MODEL = DEFAULT_MODEL
 
 class TokenTracker:
     """Track token usage and costs across API calls."""
@@ -119,17 +119,16 @@ class LLMNaturalQueryGenerator:
         self.api_key = OPENROUTER_API_KEY
         self.api_base = OPENAI_API_BASE
         self.model = MODEL
-        self.sql_dir = Path("sql_queries")
-        self.output_dir = Path("final_data")
-        self.output_dir.mkdir(exist_ok=True)
+        self.sql_dir = SQL_QUERIES_DIR
+        self.output_dir = FINAL_DATA_DIR
         
         # Initialize token tracker
         self.token_tracker = TokenTracker(self.model)
         
         # Rate limiting
-        self.requests_per_minute = 60
+        self.requests_per_minute = REQUESTS_PER_MINUTE
         self.last_request_time = 0
-        self.min_time_between_requests = 60.0 / self.requests_per_minute
+        self.min_time_between_requests = MIN_TIME_BETWEEN_REQUESTS
     
     def extract_join_columns(self, sql: str) -> List[tuple]:
         """Extract join columns from SQL to provide context."""
