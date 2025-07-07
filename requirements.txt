@@ -1,0 +1,63 @@
+# Core Dependencies
+requests>=2.31.0
+python-dotenv>=1.0.0
+pathlib>=1.0.1
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Database
+sqlite3
+
+# Visualization
+matplotlib>=3.7.0
+networkx>=3.1
+
+# API and HTTP
+urllib3>=2.0.0
+
+# Development and Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Type Hints
+typing-extensions>=4.7.0
+
+# File Processing
+glob2>=0.7
+
+# Regular Expressions (built-in, but listed for completeness)
+# re - built-in module
+
+# JSON Processing (built-in)
+# json - built-in module
+
+# Time and Date (built-in)
+# time - built-in module
+# datetime - built-in module
+
+# Operating System Interface (built-in)
+# os - built-in module
+# sys - built-in module
+
+# Pickle (built-in)
+# pickle - built-in module
+
+# Collections (built-in)
+# collections - built-in module
+
+# Subprocess (built-in)
+# subprocess - built-in module
+
+# Optional: Advanced SQL processing
+sqlparse>=0.4.4
+
+# Optional: Progress bars
+tqdm>=4.65.0
+
+# Optional: Advanced text processing
+textdistance>=4.6.0
+
+# Optional: Configuration management
+pyyaml>=6.0 

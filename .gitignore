@@ -12,8 +12,6 @@ bird_multihop_long.csv
 combined_final_data.csv
 
 # Output and log files
-*.txt
-*.log
 connect_dots_output.txt
 
 # Python cache
@@ -180,10 +178,11 @@ cython_debug/
 data/
 results/
 
-# Large files
-*.json
-*.png
-*.md
+# Large data files (specific)
+data/*.json
+data/*.png
+results/*.json
+results/*.png
 
 # API keys and secrets
 *.key
@@ -192,4 +191,10 @@ results/
 # Temporary files
 temp/
 tmp/
-*.tmp 
+*.tmp
+
+# Allow important project files
+!README.md
+!requirements.txt
+!setup.py
+!.gitignore 
