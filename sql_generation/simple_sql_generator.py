@@ -37,8 +37,8 @@ class SimpleSQLGenerator:
         self.source_dir = Path(source_dir) if source_dir else FINAL_DATA_DIR
         self.output_dir = GENERATED_QUERY_SIMPLE_DIR
         
-    def get_database_schema(self, db_name: str, target_tables: List[str]) -> str:
-        """Get simplified schema for target tables only."""
+    def get_database_schema(self, db_name: str, target_tables: List[str] = None) -> str:
+        """Get complete database schema for all tables."""
         db_path = get_database_description_path(db_name)
         
         if not db_path.exists():
@@ -47,41 +47,27 @@ class SimpleSQLGenerator:
         with open(db_path, 'r', encoding='utf-8') as f:
             full_schema = f.read()
         
-        # Extract only target tables
-        lines = full_schema.split('\n')
-        filtered_lines = []
-        current_table = None
-        include_table = False
-        
-        for line in lines:
-            if line.startswith('Table:'):
-                table_name = line.split('Table:')[1].strip()
-                current_table = table_name
-                include_table = table_name.upper() in [t.upper() for t in target_tables]
-                if include_table:
-                    filtered_lines.append(line)
-            elif include_table and line.strip():
-                filtered_lines.append(line)
-            elif not line.strip() and include_table:
-                filtered_lines.append(line)
-        
-        return '\n'.join(filtered_lines)
+        # Return the complete schema (all tables)
+        return full_schema
     
-    def create_clean_prompt(self, question: str, schema_info: str, target_path: List[str]) -> str:
-        """Create prompt WITHOUT ground truth SQL."""
-        path_str = " -> ".join(target_path)
+    def create_clean_prompt(self, question: str, schema_info: str, target_path: List[str] = None) -> str:
+        """Create prompt with path inference instructions."""
         
-        return f"""You are an expert SQL developer. Generate a SQL query that answers the question using EXACTLY the specified table path.
+        return f"""You are an expert SQL developer. You have access to a complete database schema where all tables are connected to form a graph through foreign key relationships.
 
 DATABASE SCHEMA:
 {schema_info}
 
+INSTRUCTIONS:
+1. All tables in this database are connected to each other through foreign key relationships, forming a complete graph
+2. Based on the natural language question, you must infer the optimal path through the tables needed to answer the question
+3. Construct a SQL query that joins the necessary tables in the correct sequence to retrieve the required information
+4. Use appropriate JOIN operations to connect tables through their foreign key relationships
+5. Focus on the entities and relationships mentioned in the question to determine the table path
+
 QUESTION: {question}
 
-REQUIRED PATH: {path_str}
-(You MUST use these tables in this exact order)
-
-Generate ONLY the SQL query without any explanations or markdown formatting."""
+Generate ONLY the SQL query without any explanations or markdown formatting. The query should traverse the necessary tables to answer the question."""
 
     def call_qwen(self, prompt: str) -> Dict[str, Any]:
         """Call Qwen 2.5 72B via OpenRouter API."""
@@ -123,11 +109,11 @@ Generate ONLY the SQL query without any explanations or markdown formatting."""
         question = query_data["natural_query"]
         true_path = query_data["path"]
         
-        # Get schema
-        schema_info = self.get_database_schema(db_name, true_path)
+        # Get complete database schema (all tables)
+        schema_info = self.get_database_schema(db_name)
         
-        # Create clean prompt (without ground truth SQL)
-        prompt = self.create_clean_prompt(question, schema_info, true_path)
+        # Create prompt with path inference instructions
+        prompt = self.create_clean_prompt(question, schema_info)
         
         # Call API
         response = self.call_qwen(prompt)
