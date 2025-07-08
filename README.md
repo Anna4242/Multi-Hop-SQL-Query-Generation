@@ -73,3 +73,28 @@ python simple_sql_generator.py             # Generate SQL using Qwen 2.5 72B
 cd visualization
 python visualize_graphs.py                 # Generate visualizations
 ```
+
+## Ground Truth Pipeline Details
+
+The **ground truth generator** performs two key tasks:
+
+1. **Connection Graph Generation** – `generate_full_connection_graphs.py` crawls every SQLite database inside the BIRD corpus and builds a *fully-connected graph* of all tables.  Each edge represents a foreign-key relationship  so that every table is reachable from every other table.
+2. **Natural Query Generation** – `natural_query_generator.py` reads the table-to-table *path* (produced during query generation) and produces an *over-arching* natural-language question whose answer requires traversing that exact path in the graph.
+
+All of the intermediate artefacts are merged by `combine_final_data.py` into a single  file that serves as **ground-truth** for evaluation.
+
+### Prompt Templates
+All LLM prompts live in `connect_dots/prompts/`.  For example, `simple_sql_prompt.json` holds the template used by `simple_sql_generator.py`.  Editing this JSON file lets you tweak the system prompt without changing code.
+
+### Quick Test Cycle
+Once you have produced ground-truth data (run the scripts in *Generate Ground Truth Data* above) you can immediately assess an LLM’s SQL-generation ability:
+
+```bash
+# From project root
+cd sql_generation
+python simple_sql_generator.py              # Uses ground-truth NL questions & schema
+```
+
+`simple_sql_generator.py` reads each natural-language question, injects the **complete schema** for its database, and asks the model to infer the join-path and write the SQL.  You can then compare the generated SQL with the ground-truth answer to gauge model accuracy.
+
+---
